@@ -1,26 +1,55 @@
+from __future__ import division
 import re
 import sys
 import cPickle as pickle
 import os
 import math
+
 # 0 -> ham
 # 1 -> spam
 def main():
     n = len(sys.argv)
-    print sys.argv
     if n == 2 and sys.argv[1] == "-t":
-        os.remove("knowledgebase.p")
+        if os.path.isfile("knowledgebase.p"):
+            os.remove("knowledgebase.p")
         knowledgebase = buildTrainingSet(400,100)
-        pickle.dump(knowledgebase, open("knowledgebase.p","wb"))
+        with open("knowledgebase.p","wb") as handle:
+            pickle.dump(knowledgebase, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    elif n ==2  and sys.argv[1] == "-tAll":
+        with open("knowledgebase.p","rb") as handle:
+            knwb = pickle.load(handle)
+        testAll(knwb,400,100)
     elif n == 2:
-        knwb = pickle.load(open("knowledgebase.p","rb"))
-        testData(sys.argv[1],knwb)
+        with open("knowledgebase.p","rb") as handle:
+            knwb = pickle.load(handle)
+        if os.path.isfile(sys.argv[1]):
+            print testData(sys.argv[1],knwb) +"\n"
+        else:
+            print sys.argv[1] +" was not found!\n"
     else:
         print "Usage: -t    Build Training Set\n"
 
+def getBayes(nham,nspam, countDic):
+    # ham =0,spam=1
+    # for every dic(w,spam) = P(S|W)
+    knwb = dict()
+    for key in countDic:
+        countDic[key]
+        if key[1] == 1:
+            pwsXps = countDic[key] *nspam
+            psgivenw = pwsXps / (pwsXps+(countDic[(key[0],0)] * nham))
+            knwb[key] = psgivenw
+        else:
+            pwhXph = countDic[key] *nham
+            phgivenw = pwhXph / (pwhXph+(countDic[(key[0],1)] * nspam))
+            knwb[key] = psgivenw
+
+    return knwb
+
+
 def buildTrainingSet(nham,nspam):
     knowledgebase = dict()
-
+    # Laplace correction added
     for i in range(nham):
         filename = "public/ham"+("%03d"%i)+".txt"
         rFile = open(filename,'r' )
@@ -36,7 +65,7 @@ def buildTrainingSet(nham,nspam):
                     if (w,0) in knowledgebase:
                         knowledgebase[(w,0)] += 1
                     else:
-                        knowledgebase[(w,0)] = 1
+                        knowledgebase[(w,0)] = 2
                         knowledgebase[(w,1)] = 1
                     emailWord.append(w)
         rFile.close()
@@ -55,39 +84,29 @@ def buildTrainingSet(nham,nspam):
                     if (w,1) in knowledgebase:
                         knowledgebase[(w,1)] += 1
                     else:
-                        knowledgebase[(w,1)] = 1
+                        knowledgebase[(w,1)] = 2
 
                     if not ((w,0) in knowledgebase):
                         knowledgebase[(w,0)] = 1
                     emailWord.append(w)
         rFile.close()
 
-
-    # Bayes
-    spamn = nspam +1.0
-    hamn = nham +1.0
-    ph = hamn/(spamn+hamn)
-    ps = spamn /(spamn+hamn)
     knwb = dict()
+    nham +=2
+    nspam +=2
     for key in knowledgebase:
-        # ham =0,spam=1
-        if (key[1] == 0):
-            knwb[key] = knowledgebase[key] /(knowledgebase[key]+knowledgebase[key[0],1])
-
+        if key[1] == 1:
+            pwsXps = (knowledgebase[key] / nspam) * (nspam/(nspam+nham))
+            psgivenw = pwsXps / (pwsXps+(knowledgebase[(key[0],0)] *(nham/(nspam+nham))))
+            knwb[key] = psgivenw
         else:
-            knwb[key] =knowledgebase[key] /(knowledgebase[key]+knowledgebase[key[0],0])
-
-
+            pwhXph = (knowledgebase[key] / nham) * (nham/(nspam+nham))
+            phgivenw = pwhXph / (pwhXph+(knowledgebase[(key[0],1)] * (nspam/(nspam+nham))))
+            knwb[key] = psgivenw
     return knwb
 
 def testData(file, knwb):
-    # getting words in test email
-    i =0
-    for key in knwb:
-        print key[0]+" ham:" +str(knwb[(key[0],0)])+" spam:"+str(knwb[(key[0],1)])
-        i +=1
-        if(i > 30):
-            break;
+    # getting words in email
     rFile = open(file,'r' )
     emailWord = []
     for line in rFile:
@@ -100,26 +119,39 @@ def testData(file, knwb):
                 emailWord.append(w)
     rFile.close()
 
-    ns = 0
-    nh = 0
-
+    # calculate ln(P(S|emailWord0 ... emailWordN) / P(S|emailWord0 ... emailWordN)) >1
+    logpsw = 0
+    logphw = 0
     for w in emailWord:
         if (w,0) in knwb:
-            phamw = knwb[w,0]
-            pspamw = knwb[w,1]
-            ns += math.log(1 - pspamw) - math.log(pspamw)
-            nh += math.log(1 - phamw) - math.log(phamw)
-    print ns
-    print nh
-    pham = 1 /(1+ math.exp(nh))
-    pspam = 1 /(1+ math.exp(ns))
-    print pham
-    print pspam
-    if (pspam != 0):
-        if (pham/pspam >= 1):
-            print "ham\n"
-        elif (pham/pspam < 1):
-            print "spam\n"
+            logpsw += math.log(knwb[(w,1)])
+            logphw += math.log(knwb[(w,0)])
+    #print logpsw
+    #print logphw
+    if logphw - logpsw>= 1:
+        return "ham"
     else:
-        print "DUCK!"
+        return "spam"
+
+def testAll(knwb,nham,nspam):
+    hams = []
+    spams =[]
+    for i in range(nham):
+        filename = "public/ham"+("%03d"%i)+".txt"
+        hams.append(testData(filename,knwb))
+
+    for i in range(nspam):
+        filename = "public/spam"+("%03d"%i)+".txt"
+        spams.append(testData(filename,knwb))
+
+    while ("spam" in hams):
+        print str(hams.index("spam"))+ " "
+        hams.remove("spam")
+
+    print "\n spams wrong\n"
+
+    while ("ham" in spams):
+        print str(spams.index("ham"))+ " "
+        spams.remove("ham")
+
 main()
