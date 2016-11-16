@@ -17,6 +17,7 @@ def main():
         if os.path.isfile("knowledgebase.p"):
             os.remove("knowledgebase.p")
         knowledgebase = buildTrainingSet(400,100)
+        print len(knowledgebase)
         with open("knowledgebase.p","wb") as handle:
             pickle.dump(knowledgebase, handle, protocol=pickle.HIGHEST_PROTOCOL)
     elif n ==2  and sys.argv[1] == "-tAll":
@@ -108,14 +109,14 @@ def buildTrainingSet(nham,nspam):
         if key[1] == 1:
             pws = (knowledgebase[key] / nspam)
             pwh = knowledgebase[(key[0],0)] / nham
-            if ( pws != pwh ):
+            if ( abs(pws-pwh) > 0.05):
                 pwsXps = (knowledgebase[key] / nspam) * (nspam/(nspam+nham))
                 psgivenw = pwsXps / (pwsXps+(knowledgebase[(key[0],0)] *(nham/(nspam+nham))))
                 knwb[key] = psgivenw
         else:
             pwh = (knowledgebase[key] / nham)
             pws = knowledgebase[(key[0],1)] / nspam
-            if ( pws != pwh ):
+            if ( abs(pws-pwh) > 0.05 ):
                 pwhXph = (knowledgebase[key] / nham) * (nham/(nspam+nham))
                 phgivenw = pwhXph / (pwhXph+(knowledgebase[(key[0],1)] * (nspam/(nspam+nham))))
                 knwb[key] = psgivenw
