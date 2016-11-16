@@ -10,7 +10,7 @@ import math
 neutral_words = ["the","The","be","Be","to","To","Subject","in","In","a","A",
     "an","and","of","Of","I","at","At","by","By","this","This","because","Because",
     "or","Or","there","There","their","Their","also","for","For","are","Are","so","So",
-    "Too","too","is","Is","as","As"]
+    "Too","too","is","Is","as","As","it","It"]
 def main():
     n = len(sys.argv)
     if n == 2 and sys.argv[1] == "-t":
@@ -66,6 +66,8 @@ def buildTrainingSet(nham,nspam):
                 for w in words:
                     if w == "":
                         continue
+                    if w in neutral_words:
+                        continue
                     if not(w in emailWord):
                         if (w,0) in knowledgebase:
                             knowledgebase[(w,0)] += 1
@@ -85,6 +87,8 @@ def buildTrainingSet(nham,nspam):
                 words = nline.split(' ')
                 for w in words:
                     if w == "":
+                        continue
+                    if w in neutral_words:
                         continue
                     if not(w in emailWord):
                         if (w,1) in knowledgebase:
@@ -120,7 +124,7 @@ def testData(file, knwb):
         nline = re.sub(r'[^A-Za-z ]',"",line)
         words = nline.split(' ')
         for w in words:
-            if (w == "") or (w in neutral_words):
+            if w == "":
                 continue
             if not(w in emailWord):
                 emailWord.append(w)
