@@ -61,10 +61,6 @@ def buildTrainingSet(nham,nspam):
     scapwords = 0.0
     hwordstot = 0.0
     hcapwords = 0.0
-    """hsymbols = 0.0
-    ssymbols = 0.0
-    hletters = 0.0
-    sletters = 0.0"""
     # Laplace correction added
     for i in range(nham):
         filename = "public/ham"+("%03d"%i)+".txt"
@@ -72,11 +68,6 @@ def buildTrainingSet(nham,nspam):
             rFile = open(filename,'r' )
             emailWord = []
             for line in rFile:
-                """for char in line:
-                    if not char.isspace():
-                        hletters += 1
-                        if ((not char.isalpha()) and (not char == '-')):
-                            hsymbols += 1"""
                 nline = re.sub(r'[^A-Za-z ]',"",line)
                 nline = re.sub('\s+'," ",nline)
                 words = nline.split(' ')
@@ -103,11 +94,6 @@ def buildTrainingSet(nham,nspam):
             rFile = open(filename,'r' )
             emailWord = []
             for line in rFile:
-                """for char in line:
-                    if not char.isspace():
-                        sletters += 1
-                        if ((not char.isalpha()) and (not char == '-')):
-                            ssymbols += 1"""
                 nline = re.sub(r'[^A-Za-z ]',"",line)
                 words = nline.split(' ')
                 for w in words:
@@ -149,8 +135,6 @@ def buildTrainingSet(nham,nspam):
                 knwb[key] = psgivenw
     print "HAM CAP PROP %f" % (hcapwords/hwordstot)
     print "SPAM CAP PROP %f" % (scapwords/swordstot)
-    #print "Ham Symbols prop %f" % (hsymbols/hletters)
-    #print "Spam Symbols prop %f" % (ssymbols/sletters)
     return knwb
 
 def testData(file, knwb):
@@ -171,6 +155,7 @@ def testData(file, knwb):
             if not(w in emailWord):
                 emailWord.append(w)
     rFile.close()
+
     # calculate ln(P(S|emailWord0 ... emailWordN) / P(S|emailWord0 ... emailWordN)) >1
     logpsw = 0
     logphw = 0
@@ -207,5 +192,4 @@ def testAll(knwb,nham,nspam):
         print str(spams.index("ham"))+ " "
         spams.remove("ham")
 
-def subjectSearch(file)
 main()
