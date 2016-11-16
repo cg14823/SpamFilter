@@ -106,13 +106,19 @@ def buildTrainingSet(nham,nspam):
     nspam +=2
     for key in knowledgebase:
         if key[1] == 1:
-            pwsXps = (knowledgebase[key] / nspam) * (nspam/(nspam+nham))
-            psgivenw = pwsXps / (pwsXps+(knowledgebase[(key[0],0)] *(nham/(nspam+nham))))
-            knwb[key] = psgivenw
+            pws = (knowledgebase[key] / nspam)
+            pwh = knowledgebase[(key[0],0)] / nham
+            if ( pws != pwh ):
+                pwsXps = (knowledgebase[key] / nspam) * (nspam/(nspam+nham))
+                psgivenw = pwsXps / (pwsXps+(knowledgebase[(key[0],0)] *(nham/(nspam+nham))))
+                knwb[key] = psgivenw
         else:
-            pwhXph = (knowledgebase[key] / nham) * (nham/(nspam+nham))
-            phgivenw = pwhXph / (pwhXph+(knowledgebase[(key[0],1)] * (nspam/(nspam+nham))))
-            knwb[key] = psgivenw
+            pwh = (knowledgebase[key] / nham)
+            pws = knowledgebase[(key[0],1)] / nspam
+            if ( pws != pwh ):
+                pwhXph = (knowledgebase[key] / nham) * (nham/(nspam+nham))
+                phgivenw = pwhXph / (pwhXph+(knowledgebase[(key[0],1)] * (nspam/(nspam+nham))))
+                knwb[key] = psgivenw
     return knwb
 
 def testData(file, knwb):
