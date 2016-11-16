@@ -7,6 +7,10 @@ import math
 
 # 0 -> ham
 # 1 -> spam
+neutral_words = ["the","The","be","Be","to","To","Subject","in","In","a","A",
+    "an","and","of","Of","I","at","At","by","By","this","This","because","Because",
+    "or","Or","there","There","their","Their","also","for","For","are","Are","so","So",
+    "Too","too","is","Is","as","As"]
 def main():
     n = len(sys.argv)
     if n == 2 and sys.argv[1] == "-t":
@@ -109,13 +113,14 @@ def buildTrainingSet(nham,nspam):
 
 def testData(file, knwb):
     # getting words in email
+
     rFile = open(file,'r' )
     emailWord = []
     for line in rFile:
         nline = re.sub(r'[^A-Za-z ]',"",line)
         words = nline.split(' ')
         for w in words:
-            if w == "":
+            if (w == "") or (w in neutral_words):
                 continue
             if not(w in emailWord):
                 emailWord.append(w)
