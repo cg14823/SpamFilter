@@ -52,44 +52,46 @@ def buildTrainingSet(nham,nspam):
     # Laplace correction added
     for i in range(nham):
         filename = "public/ham"+("%03d"%i)+".txt"
-        rFile = open(filename,'r' )
-        emailWord = []
-        for line in rFile:
-            nline = re.sub(r'[^A-Za-z ]',"",line)
-            nline = re.sub('\s+'," ",nline)
-            words = nline.split(' ')
-            for w in words:
-                if w == "":
-                    continue
-                if not(w in emailWord):
-                    if (w,0) in knowledgebase:
-                        knowledgebase[(w,0)] += 1
-                    else:
-                        knowledgebase[(w,0)] = 2
-                        knowledgebase[(w,1)] = 1
-                    emailWord.append(w)
-        rFile.close()
+        if os.path.isfile(filename):
+            rFile = open(filename,'r' )
+            emailWord = []
+            for line in rFile:
+                nline = re.sub(r'[^A-Za-z ]',"",line)
+                nline = re.sub('\s+'," ",nline)
+                words = nline.split(' ')
+                for w in words:
+                    if w == "":
+                        continue
+                    if not(w in emailWord):
+                        if (w,0) in knowledgebase:
+                            knowledgebase[(w,0)] += 1
+                        else:
+                            knowledgebase[(w,0)] = 2
+                            knowledgebase[(w,1)] = 1
+                        emailWord.append(w)
+            rFile.close()
 
     for i in range(nspam):
         filename = "public/spam"+("%03d"%i)+".txt"
-        rFile = open(filename,'r' )
-        emailWord = []
-        for line in rFile:
-            nline = re.sub(r'[^A-Za-z ]',"",line)
-            words = nline.split(' ')
-            for w in words:
-                if w == "":
-                    continue
-                if not(w in emailWord):
-                    if (w,1) in knowledgebase:
-                        knowledgebase[(w,1)] += 1
-                    else:
-                        knowledgebase[(w,1)] = 2
+        if os.path.isfile(filename):
+            rFile = open(filename,'r' )
+            emailWord = []
+            for line in rFile:
+                nline = re.sub(r'[^A-Za-z ]',"",line)
+                words = nline.split(' ')
+                for w in words:
+                    if w == "":
+                        continue
+                    if not(w in emailWord):
+                        if (w,1) in knowledgebase:
+                            knowledgebase[(w,1)] += 1
+                        else:
+                            knowledgebase[(w,1)] = 2
 
-                    if not ((w,0) in knowledgebase):
-                        knowledgebase[(w,0)] = 1
-                    emailWord.append(w)
-        rFile.close()
+                        if not ((w,0) in knowledgebase):
+                            knowledgebase[(w,0)] = 1
+                        emailWord.append(w)
+            rFile.close()
 
     knwb = dict()
     nham +=2
@@ -138,11 +140,13 @@ def testAll(knwb,nham,nspam):
     spams =[]
     for i in range(nham):
         filename = "public/ham"+("%03d"%i)+".txt"
-        hams.append(testData(filename,knwb))
+        if os.path.isfile(filename):
+            hams.append(testData(filename,knwb))
 
     for i in range(nspam):
         filename = "public/spam"+("%03d"%i)+".txt"
-        spams.append(testData(filename,knwb))
+        if os.path.isfile(filename):
+            spams.append(testData(filename,knwb))
 
     while ("spam" in hams):
         print str(hams.index("spam"))+ " "

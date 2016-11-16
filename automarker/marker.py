@@ -46,7 +46,7 @@ for i in emails:
     else:
         sys.exit("File %s has neither *ham* nor *spam* keyword in its name!" % i)
 
-    exe = subprocess.Popen(execute.split(), stdout=subprocess.PIPE)
+    exe = subprocess.Popen(current_email.split(), stdout=subprocess.PIPE)
     output, error = exe.communicate()
 
     output = output.strip()
