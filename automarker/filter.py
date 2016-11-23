@@ -191,16 +191,15 @@ def buildTrainingSet(nham,nspam):
     nham +=2
     nspam +=2
     for key in knowledgebase:
+        if knowledgebase[key[0],0] +knowledgebase[key[0],1] < 7:
+            continue
+
         if key[1] == 1:
             pws = (knowledgebase[key] / nspam)
-            pwh = knowledgebase[(key[0],0)] / nham
-            if ( abs(pws-pwh) > 0.05):
-                knwb[key] = pws
+            knwb[key] = pws
         else:
             pwh = (knowledgebase[key] / nham)
-            pws = knowledgebase[(key[0],1)] / nspam
-            if ( abs(pws-pwh) > 0.05 ):
-                knwb[key] = pwh
+            knwb[key] = pwh
 
     #print "HAM CAP PROP %f" % ((hcapwords/hwordstot)/(nham-2))
     #print "SPAM CAP PROP %f" % ((scapwords/swordstot)/(nspam-2))
@@ -252,16 +251,19 @@ def testData(file, knwb):
                 if not(w in emailWord):
                     emailWord.append(w)
     # calculate ln(P(S|emailWord0 ... emailWordN) / P(S|emailWord0 ... emailWordN)) >1
-    logpsw = 1
-    logphw = 1
+    scorespam= 0
+    scoreham = 0
     for w in emailWord:
         if (w,0) in knwb:
-            logpsw *= knwb[(w,1)]
-            logphw *= knwb[(w,0)]
+            scorespam += math.log(knwb[(w,1)])
+            scoreham += math.log(knwb[(w,0)])
 
-    #print logphw-logpsw
 
-    if (4)*(logphw/logpsw) > 1:
+    scoreham  += math.log(4/5)
+    scorespam += math.log(1/5)
+    #print "scoreham %f" % scoreham
+    #print "scorespam %f" % scorespam
+    if scoreham >= scorespam:
         return "ham"
     else:
         return "spam"
