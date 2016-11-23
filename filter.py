@@ -195,25 +195,21 @@ def buildTrainingSet(nham,nspam):
             pws = (knowledgebase[key] / nspam)
             pwh = knowledgebase[(key[0],0)] / nham
             if ( abs(pws-pwh) > 0.05):
-                pwsXps = (knowledgebase[key] / nspam) * (nspam/(nspam+nham))
-                psgivenw = pwsXps / (pwsXps+(knowledgebase[(key[0],0)] *(nham/(nspam+nham))))
-                knwb[key] = psgivenw
+                knwb[key] = pws
         else:
             pwh = (knowledgebase[key] / nham)
             pws = knowledgebase[(key[0],1)] / nspam
             if ( abs(pws-pwh) > 0.05 ):
-                pwhXph = (knowledgebase[key] / nham) * (nham/(nspam+nham))
-                phgivenw = pwhXph / (pwhXph+(knowledgebase[(key[0],1)] * (nspam/(nspam+nham))))
-                knwb[key] = psgivenw
-    print "HAM CAP PROP %f" % ((hcapwords/hwordstot)/(nham-2))
-    print "SPAM CAP PROP %f" % ((scapwords/swordstot)/(nspam-2))
-    print "Ham Symbols prop %f" % ((hsymbols/hletters)/(nham-2))
-    print "Spam Symbols prop %f" % ((ssymbols/sletters)/(nspam-2))
+                knwb[key] = pwh
+
+    #print "HAM CAP PROP %f" % ((hcapwords/hwordstot)/(nham-2))
+    #print "SPAM CAP PROP %f" % ((scapwords/swordstot)/(nspam-2))
+    #print "Ham Symbols prop %f" % ((hsymbols/hletters)/(nham-2))
+    #print "Spam Symbols prop %f" % ((ssymbols/sletters)/(nspam-2))
     return knwb
 
 def testData(file, knwb):
     # getting words in email
-    print file
     wordstot = 0.0
     capwords = 0.0
     letters = 0.0
@@ -256,20 +252,16 @@ def testData(file, knwb):
                 if not(w in emailWord):
                     emailWord.append(w)
     # calculate ln(P(S|emailWord0 ... emailWordN) / P(S|emailWord0 ... emailWordN)) >1
-    logpsw = 0
-    logphw = 0
+    logpsw = 1
+    logphw = 1
     for w in emailWord:
         if (w,0) in knwb:
-            logpsw += math.log(knwb[(w,1)])
-            logphw += math.log(knwb[(w,0)])
-    print logphw-logpsw
-    print capwords/wordstot
-    sym2lett = 0
-    if not (letters == 0):
-        sym2lett = symbols/letters
-    print sym2lett
-    print "\n"
-    if logphw - logpsw - (capwords/wordstot)*12 - (sym2lett)*25 >= 0:
+            logpsw *= knwb[(w,1)]
+            logphw *= knwb[(w,0)]
+
+    #print logphw-logpsw
+
+    if (4)*(logphw/logpsw) > 1:
         return "ham"
     else:
         return "spam"
