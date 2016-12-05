@@ -37,170 +37,72 @@ def main():
     else:
         print "Usage: -t    Build Training Set\n"
 
-def getBayes(nham,nspam, countDic):
-    # ham =0,spam=1
-    # for every dic(w,spam) = P(S|W)
-    knwb = dict()
-    for key in countDic:
-        countDic[key]
-        if key[1] == 1:
-            pwsXps = countDic[key] *nspam
-            psgivenw = pwsXps / (pwsXps+(countDic[(key[0],0)] * nham))
-            knwb[key] = psgivenw
+
+def laplaceCorrection(knwb):
+    newD = dict()
+    for key in knwb:
+        if key[1] == 's':
+            if not((key[0],'h') in knwb):
+                newD[(key[0],'h')] = 1
         else:
-            pwhXph = countDic[key] *nham
-            phgivenw = pwhXph / (pwhXph+(countDic[(key[0],1)] * nspam))
-            knwb[key] = psgivenw
-
-    return knwb
-
+            if not((key[0],'s') in knwb):
+                newD[(key[0],'s')] = 1
+        newD[key] = knwb[key] +1
+    return newD
 
 def buildTrainingSet(nham,nspam):
     knowledgebase = dict()
+    wordsHam =0
+    wordsSpam =0
 
-    swordstot = 0.0
-    scapwords = 0.0
-    hwordstot = 0.0
-    hcapwords = 0.0
-    hsymbols = 0.0
-    ssymbols = 0.0
-    hletters = 0.0
-    sletters = 0.0
-
-    # Laplace correction added
     for i in range(nham):
-        subjectLineReached = False
         filename = "public/ham"+("%03d"%i)+".txt"
         if os.path.isfile(filename):
             rFile = open(filename,'r' )
-            emailWord = []
             for line in rFile:
-                if not (subjectLineReached):
-                    if "Subject:" in line:
-                        subjectLineReached = True
-                        line = line[9:]
-                        line = re.sub('[\s]',"",line)
-                        hletters += len(line)
-                        line=re.sub('[A-Za-z1-9]',"",line)
-                        hsymbols += len(line)
-                else:
-                    nline = re.sub(r'[^A-Za-z ]',"",line)
-                    nline = re.sub('\s+'," ",nline)
-                    words = nline.split(' ')
-                    for w in words:
-                        if w == "":
-                            continue
-                        hwordstot += 1
-                        if w.isupper():
-                            hcapwords += 1
-                        if w in neutral_words:
-                            continue
-                        if not(w in emailWord):
-                            if (w,0) in knowledgebase:
-                                knowledgebase[(w,0)] += 1
-                            else:
-                                knowledgebase[(w,0)] = 2
-                                knowledgebase[(w,1)] = 1
-                            emailWord.append(w)
-            rFile.close()
-            if not subjectLineReached:
-                rFile = open(filename,'r')
-                for line in rFile:
-                    nline = re.sub(r'[^A-Za-z ]',"",line)
-                    nline = re.sub('\s+'," ",nline)
-                    words = nline.split(' ')
-                    for w in words:
-                        if w == "":
-                            continue
-                        hwordstot += 1
-                        if w.isupper():
-                            hcapwords += 1
-                        if w in neutral_words:
-                            continue
-                        if not(w in emailWord):
-                            if (w,0) in knowledgebase:
-                                knowledgebase[(w,0)] += 1
-                            else:
-                                knowledgebase[(w,0)] = 2
-                                knowledgebase[(w,1)] = 1
-                            emailWord.append(w)
-                rFile.close()
-
+                nline = re.sub(r'[^A-Za-z ]',"",line)
+                words = nline.split(' ')
+                for w in words:
+                    if w != "":
+                        if (w,'h') in knowledgebase:
+                            knowledgebase[(w,'h')] +=1
+                        else:
+                            knowledgebase[(w,'h')] = 1
+                        wordsHam +=1
 
     for i in range(nspam):
-        subjectLineReached = False
         filename = "public/spam"+("%03d"%i)+".txt"
         if os.path.isfile(filename):
             rFile = open(filename,'r' )
-            emailWord = []
             for line in rFile:
-                if not (subjectLineReached):
-                    if "Subject:" in line:
-                        subjectLineReached = True
-                        line = line[9:]
-                        line = re.sub('[\s]',"",line)
-                        sletters += len(line)
-                        line=re.sub('[A-Za-z1-9]',"",line)
-                        ssymbols += len(line)
-                else:
-                    nline = re.sub(r'[^A-Za-z ]',"",line)
-                    words = nline.split(' ')
-                    for w in words:
-                        if w == "":
-                            continue
-                        swordstot += 1
-                        if w.isupper():
-                            scapwords += 1
-                        if w in neutral_words:
-                            continue
-                        if not(w in emailWord):
-                            if (w,1) in knowledgebase:
-                                knowledgebase[(w,1)] += 1
-                            else:
-                                knowledgebase[(w,1)] = 2
+                nline = re.sub(r'[^A-Za-z ]',"",line)
+                words = nline.split(' ')
+                for w in words:
+                    if w != "":
+                        if (w,'s') in knowledgebase:
+                            knowledgebase[(w,'s')] +=1
+                        else:
+                            knowledgebase[(w,'s')] = 1#
+                        wordsSpam +=1
 
-                            if not ((w,0) in knowledgebase):
-                                knowledgebase[(w,0)] = 1
-                            emailWord.append(w)
-            rFile.close()
-            if not subjectLineReached:
-                rFile = open(filename,'r')
-                for line in rFile:
-                    nline = re.sub(r'[^A-Za-z ]',"",line)
-                    words = nline.split(' ')
-                    for w in words:
-                        if w == "":
-                            continue
-                        swordstot += 1
-                        if w.isupper():
-                            scapwords += 1
-                        if w in neutral_words:
-                            continue
-                        if not(w in emailWord):
-                            if (w,1) in knowledgebase:
-                                knowledgebase[(w,1)] += 1
-                            else:
-                                knowledgebase[(w,1)] = 2
 
-                            if not ((w,0) in knowledgebase):
-                                knowledgebase[(w,0)] = 1
-                            emailWord.append(w)
-                rFile.close()
+    knowledgebase = laplaceCorrection(knowledgebase)
+    totWords = len(knowledgebase)/2
 
     knwb = dict()
-    nham +=2
-    nspam +=2
-    for key in knowledgebase:
-        if knowledgebase[key[0],0] +knowledgebase[key[0],1] < 7:
-            continue
-        pws = (knowledgebase[key[0],1] / nspam)
-        pwh = knowledgebase[key[0],0] /nham
 
-        if (abs(pws-pwh) < 0.01):
+    for key in knowledgebase:
+        # do not count words that occur less than  5 times in total
+        if knowledgebase[(key[0],'s')] +knowledgebase[(key[0],'h')] < 7:
             continue
-        else:
-            knwb[key[0],1] = pws
-            knwb[key[0],0] = pwh
+
+        pws = knowledgebase[(key[0],'s')] / (wordsSpam + totWords)
+        pwh = knowledgebase[(key[0],'h')] /(wordsHam +totWords)
+
+        # ignore words with similar probabilities for spam and ham
+        if (abs(pws-pwh)/(pws+pwh) > 0.1):
+            knwb[key[0],'s'] = pws
+            knwb[key[0],'h'] = pwh
 
     #print "HAM CAP PROP %f" % ((hcapwords/hwordstot)/(nham-2))
     #print "SPAM CAP PROP %f" % ((scapwords/swordstot)/(nspam-2))
@@ -210,61 +112,22 @@ def buildTrainingSet(nham,nspam):
 
 def testData(file, knwb):
     # getting words in email
-    wordstot = 0.0
-    capwords = 0.0
-    letters = 0.0
-    symbols = 0.0
+    spamScore =0
+    hamScore =0
     rFile = open(file,'r' )
-    emailWord = []
-    subjectLineReached = False
     for line in rFile:
-        if not (subjectLineReached):
-            if "Subject:" in line:
-                subjectLineReached = True
-                line = line[9:]
-                line = re.sub('[\s]',"",line)
-                letters += len(line)
-                line=re.sub('[A-Za-z1-9]',"",line)
-                symbols += len(line)
-        else:
-            nline = re.sub(r'[^A-Za-z ]',"",line)
-            words = nline.split(' ')
-            for w in words:
-                if w == "":
-                    continue
-                wordstot += 1
-                if w.isupper():
-                    capwords += 1
-                if not(w in emailWord):
-                    emailWord.append(w)
+        nline = re.sub(r'[^A-Za-z ]',"",line)
+        words = nline.split(' ')
+        for w in words:
+            if w != "":
+                if (w,'s') in knwb:
+                    spamScore += math.log(knwb[(w,'s')])
+                    hamScore += math.log(knwb[(w,'h')])
     rFile.close()
-    if not subjectLineReached:
-        rFile = open(file,'r' )
-        for line in rFile:
-            nline = re.sub(r'[^A-Za-z ]',"",line)
-            words = nline.split(' ')
-            for w in words:
-                if w == "":
-                    continue
-                wordstot += 1
-                if w.isupper():
-                    capwords += 1
-                if not(w in emailWord):
-                    emailWord.append(w)
-    # calculate ln(P(S|emailWord0 ... emailWordN) / P(S|emailWord0 ... emailWordN)) >1
-    scorespam= 0
-    scoreham = 0
-    for w in emailWord:
-        if (w,0) in knwb:
-            scorespam += math.log(knwb[(w,1)])
-            scoreham += math.log(knwb[(w,0)])
 
-
-    scoreham  += math.log(4/5)
-    scorespam += math.log(1/5)
-    #print "scoreham %f" % scoreham
-    #print "scorespam %f" % scorespam
-    if scoreham >= scorespam:
+    spamScore += math.log(1/5)
+    hamScore += math.log(4/5)
+    if hamScore >= spamScore:
         return "ham"
     else:
         return "spam"
@@ -278,29 +141,17 @@ def testAll(knwb,nham,nspam):
     for i in range(nham):
         filename = "public/ham"+("%03d"%i)+".txt"
         if os.path.isfile(filename):
-            print counter
-            counter +=1
-            hams.append(testData(filename,knwb))
+            access = testData(filename,knwb)
+            if (access == "spam"):
+                print "Error at ham %d" %i
+            hams.append(access)
 
     for i in range(nspam):
         filename = "public/spam"+("%03d"%i)+".txt"
         if os.path.isfile(filename):
-            print i
-            spams.append(testData(filename,knwb))
-
-    for i in range(len(hams)):
-        if("spam" in hams[i]):
-            print i
-            hamswrong +=1
-    print "hams wrong %d"% hamswrong
-
-    print "\n spams wrong %d\n",len(spams)
-
-    while ("ham" in spams):
-        spamswrong += 1
-        print str(spams.index("ham"))+ " "
-        spams.remove("ham")
-
-    print "spams wrong %d"%spamswrong
+            access = testData(filename,knwb)
+            if (access == "ham"):
+                print "Error at spam %d" %i
+            spams.append(access)
 
 main()
