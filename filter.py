@@ -730,7 +730,7 @@ def testBoth():
             hamsPredict.append(knn.predict(np.matrix([prob,ratio])))
             hamsPredictS.append(svcPredict(svc,filename,knwb))
             hamsPredictB =simpleBayes(knwb,filename)
-            hamsPredictB =testTopTen(filename,knwb)
+            hamsPredict15 =testTopTen(filename,knwb)
 
         for i in test_spam:
             filename = "public/spam"+("%03d"%i)+".txt"
