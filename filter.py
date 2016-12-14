@@ -9,9 +9,14 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import colors
 import random
+import platform
 
 # 0 -> ham
 # 1 -> spam
+
+AMOUNT = 2
+SPAMICITY = 0.0
+
 def main():
     n = len(sys.argv)
 
@@ -20,7 +25,8 @@ def main():
         if os.path.isfile("knowledgebase.p"):
             os.remove("knowledgebase.p")
         knowledgebase = buildTrainingSet(400,100)
-        buildLinearClassifier(400,100,knowledgebase)
+        m,c =buildLinearClassifier(range(400),range(100),knowledgebase)
+        writeLinearFile(m,c)
         with open("knowledgebase.p","wb") as handle:
             pickle.dump(knowledgebase, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -29,10 +35,19 @@ def main():
             knwb = pickle.load(handle)
         m,c = readLinearFile()
         visualize(m,c,knwb)
+
     elif n ==2  and sys.argv[1] == "-simpleAcc":
         testMultipleSimpleBayes()
+    elif n ==2  and sys.argv[1] == "-tB":
+        testBoth()
     elif n ==2  and sys.argv[1] == "-ca":
         testMultipleComplexBayes()
+    elif n ==2  and sys.argv[1] == "-tuneS":
+        tuneSpamicity()
+    elif n ==2  and sys.argv[1] == "-tuneA":
+        tuneAmaount()
+    elif n ==2  and sys.argv[1] == "-tune2d":
+        tunner2d()
     elif n == 2:
         with open("knowledgebase.p","rb") as handle:
             knwb = pickle.load(handle)
@@ -47,20 +62,57 @@ def main():
 
 
 def testsymtoletSingle(filename):
+    # remove as much of the headers as possible
     if os.path.isfile(filename):
         rFile = open(filename,'r' )
         fileText = rFile.read()
+        rFile.close()
         if "<html>" in fileText or "<HTML>" in fileText:
             return -0.5
+        fileText = removeHeaders(fileText)
         nospaces = re.sub(r'\s+',"",fileText)
         nospaces = nospaces.replace(",","")
         nospaces = nospaces.replace(".","")
         allcount = len(nospaces)
         symbolCount = len(re.sub(r'[A-za-z]',"",nospaces))
         characterCount = allcount-symbolCount
-        prop = symbolCount/characterCount
-        return symbolCount/characterCount
+        prop = -0.5
+        try:
+            prop = symbolCount/characterCount
+        except ZeroDivisionError:
+            print "cgharactercount was 0\n"
+        return prop
     return -1
+
+def removeHeaders(str):
+    i = str.find("Subject: ")
+    if (i>=0):
+        uptoSubject = str[i:]
+        newLineI = uptoSubject.index("\n")
+        subjectLine = str[i:newLineI+1]
+        headers =["From:","Date:", "Sender:","Precedence:","References:"]
+        textAfterSubject = uptoSubject[newLineI:]
+        lines = textAfterSubject.split("\n")
+        indexor = 0
+        for l in lines:
+            ws = l.split(" ")
+            if (len(ws) > 1 ):
+                w = ws[0]
+                if(len(w)>1):
+                    c = w[-1]
+                    if not (c == ':' and ( w in headers or '-' in w)):
+                        #print "here"
+                        break
+                else:
+                    break
+            else:
+                break
+            indexor += 1
+        newLines = lines[indexor:]
+        newLines = "\n".join(newLines)
+        text = uptoSubject + newLines
+        return text
+    return str
 
 def laplaceCorrection(knwb):
     newD = dict()
@@ -121,14 +173,14 @@ def buildTrainingSet(nham,nspam):
 
     for key in knowledgebase:
         # do not count words that occur less than  5 times in total
-        if knowledgebase[(key[0],'s')] +knowledgebase[(key[0],'h')] < 7:
+        if knowledgebase[(key[0],'s')] +knowledgebase[(key[0],'h')] < AMOUNT:
             continue
 
         pws = knowledgebase[(key[0],'s')] / (wordsSpam + totWords)
         pwh = knowledgebase[(key[0],'h')] /(wordsHam +totWords)
 
         # ignore words with similar probabilities for spam and ham
-        if (abs(pws-pwh)> max(pws,pwh)*0.40):
+        if (abs(pws-pwh)> max(pws,pwh)*SPAMICITY):
             knwb[key[0],'s'] = pws
             knwb[key[0],'h'] = pwh
     return knwb
@@ -175,6 +227,8 @@ def probability_and_proportion(file, knwb):
                 if (w,'s') in knwb:
                     spamScore += math.log(knwb[(w,'s')])
                     hamScore += math.log(knwb[(w,'h')])
+                else:
+                    spamScore += math.log(0.99)
     rFile.close()
     spamScore += math.log(1/5)
     hamScore += math.log(4/5)
@@ -365,7 +419,7 @@ def getAccuracyFinal(trainsH,trainS,testH,testS):
                         if (w,'s') in knowledgebase:
                             knowledgebase[(w,'s')] +=1
                         else:
-                            knowledgebase[(w,'s')] = 1#
+                            knowledgebase[(w,'s')] = 1
                         wordsSpam +=1
 
 
@@ -383,7 +437,7 @@ def getAccuracyFinal(trainsH,trainS,testH,testS):
         pwh = knowledgebase[(key[0],'h')] /(wordsHam +totWords)
 
         # ignore words with similar probabilities for spam and ham
-        if (abs(pws-pwh)> max(pws,pwh)*0.10):
+        if (abs(pws-pwh)> max(pws,pwh)*0.30):
             knwb[key[0],'s'] = pws
             knwb[key[0],'h'] = pwh
     m,c = buildLinearClassifier(trainsH,trainS,knwb)
@@ -439,6 +493,91 @@ def testMultipleComplexBayes():
     print "Accuracy per iteration: {}".format(ACCS)
     print "Mean Accuracy {}".format(np.mean(ACCS))
 
+def testBoth():
+    ACCSS = []
+    ACCSL = []
+    for i in range(20):
+        train_ham, train_spam, test_hams, test_spam = divideTestTrain()
+        ACCSL.append(getAccuracyFinal(train_ham, train_spam, test_hams, test_spam))
+        ACCSS.append(getAccuracyNaivebayes(train_ham, train_spam, test_hams, test_spam))
+    print "----Simple Naive Bayes---"
+    #print "Accuracy per iteration: {}".format(ACCSS)
+    print "Mean Accuracy {:.3f}\n".format(np.mean(ACCSS))
+
+    print "----Linear Classifier---"
+    #print "Accuracy per iteration: {}".format(ACCSL)
+    print "Mean Accuracy {:.3f}".format(np.mean(ACCSL))
+
+def tuneSpamicity():
+    tuneAccs =[]
+    plat = platform.system()
+    xx = np.linspace(0,0.9,90)
+    ccc = 0
+    for x in xx:
+        ACCS = []
+        SPAMICITY = x
+        for i in range(10):
+            train_ham, train_spam, test_hams, test_spam = divideTestTrain()
+            ACCS.append(getAccuracyFinal(train_ham, train_spam, test_hams, test_spam))
+        tuneAccs.append(np.mean(ACCS))
+        ccc+=1
+        print ccc
+    fig = plt.figure()
+    plt.plot(xx,tuneAccs,"k-",linewidth=3)
+    plt.xlim(0,0.9)
+    plt.ylim(0,1)
+    plt.grid(True)
+    plt.show()
+
+def tuneAmaount():
+    tuneAccs =[]
+    plat = platform.system()
+    xx = np.arange(2,13)
+    ccc = 0
+    for x in xx:
+        ACCS = []
+        AMOUNT = x
+        for i in range(10):
+            train_ham, train_spam, test_hams, test_spam = divideTestTrain()
+            ACCS.append(getAccuracyFinal(train_ham, train_spam, test_hams, test_spam))
+        tuneAccs.append(np.mean(ACCS))
+        ccc+=1
+        print ccc
+    fig = plt.figure()
+    plt.plot(xx,tuneAccs,"k-",linewidth=3)
+    plt.xlim(2,12)
+    plt.ylim(0,1)
+    plt.grid(True)
+    plt.show()
+
+def tunner2d():
+    spamrange = np.arange(0,0.9,0.05)
+    amountRange = np.arange(2,20,1)
+    tuneAccs = np.zeros((18,18))
+    tot_iters = 18*18
+    percCounter =0
+    xi = 0
+    for x in spamrange:
+        SPAMICITY = x
+        for y in amountRange:
+            ACCS = []
+            AMOUNT = y
+            for i in range(5):
+                train_ham, train_spam, test_hams, test_spam = divideTestTrain()
+                ACCS.append(getAccuracyFinal(train_ham, train_spam, test_hams, test_spam))
+
+            tuneAccs[xi,y-2] = np.mean(ACCS)
+            percCounter += 1
+            percentCompleted = (percCounter/tot_iters) *100
+            print "{:.2f}%".format(percentCompleted)
+        xi +=1
+    for i in range(5):
+        xmax = tuneAccs.argmax(0)
+        ymax = tuneAccs.argmax(1)
+        print xmax
+        print ymax
+        print tuneAccs.max()
+        tuneAccs[xmax,ymax] =0.0
 
 def divideTestTrain():
     hamsIs = range(400)
