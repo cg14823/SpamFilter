@@ -831,10 +831,10 @@ def tunner2d():
                 knwb = buildTrainingSet(train_ham,train_spam)
                 hamsPredict = []
                 spamsPredict = []
-                for i in testH:
+                for i in test_ham:
                     filename = "public/ham"+("%03d"%i)+".txt"
                     hamsPredict.append(simpleBayes(knwb,filename))
-                for i in testS:
+                for i in test:
                     filename = "public/spam"+("%03d"%i)+".txt"
                     spamsPredict.append(simpleBayes(knwb,filename))
                 TP = spamsPredict.count("spam")
