@@ -53,7 +53,7 @@ def main():
     elif n ==2  and sys.argv[1] == "-t10":
         with open("knowledgebase.p","rb") as handle:
             knwb = pickle.load(handle)
-        testTopTen("public\ham000.txt",knwb)
+        testTopTen("public\spam000.txt",knwb)
     elif n ==2  and sys.argv[1] == "-ca":
         testMultipleComplexBayes()
     elif n ==2  and sys.argv[1] == "-tuneS":
@@ -706,7 +706,8 @@ def testBoth():
     ACCLINEAR = []
     ACCKNN = []
     ACCSVC = []
-    for i in range(25):
+    ACCS15 = []
+    for i in range(10):
         train_ham, train_spam, test_hams, test_spam = divideTestTrain()
         ACCLINEAR.append(getAccuracyFinal(train_ham, train_spam, test_hams, test_spam))
         ACCSIMPLE.append(getAccuracyNaivebayes(train_ham, train_spam, test_hams, test_spam))
@@ -721,12 +722,15 @@ def testBoth():
         spamsPredictS = []
         hamsPredictB = []
         spamsPredictB = []
+        hamsPredict15 = []
+        spamsPredict15 = []
         for i in test_hams:
             filename = "public/ham"+("%03d"%i)+".txt"
             prob, ratio = probability_and_proportion(filename,knwb)
             hamsPredict.append(knn.predict(np.matrix([prob,ratio])))
             hamsPredictS.append(svcPredict(svc,filename,knwb))
             hamsPredictB =simpleBayes(knwb,filename)
+            hamsPredict15 =testTopTen(filename,knwb)
 
         for i in test_spam:
             filename = "public/spam"+("%03d"%i)+".txt"
@@ -734,6 +738,7 @@ def testBoth():
             spamsPredict.append(knn.predict(np.matrix([prob,ratio])))
             spamsPredictS.append(svcPredict(svc,filename,knwb))
             spamsPredictB =simpleBayes(knwb,filename)
+            spamsPredict15 =testTopTen(filename,knwb)
 
         TP = spamsPredict.count("spam")
         TN = hamsPredict.count("ham")
@@ -755,6 +760,12 @@ def testBoth():
         FN = hamsPredictB.count("spam")
         ACC = (TP + TN)/(TP + TN + FP + FN)
         ACCIMBAYES.append(ACC)
+        TP = spamsPredict15.count("spam")
+        TN = hamsPredict15.count("ham")
+        FP = spamsPredict15.count("ham")
+        FN = hamsPredict15.count("spam")
+        ACC = (TP + TN)/(TP + TN + FP + FN)
+        ACCS15.append(ACC)
 
     print "----Simple Naive Bayes---"
     #print "Accuracy per iteration: {}".format(ACCSS)
@@ -762,6 +773,9 @@ def testBoth():
     print "----Improved Bayes---"
     #print "Accuracy per iteration: {}".format(ACCSL)
     print "Mean Accuracy {:.3f}".format(np.mean(ACCIMBAYES))
+    print "----Top 15---"
+    #print "Accuracy per iteration: {}".format(ACCSL)
+    print "Mean Accuracy {:.3f}".format(np.mean(ACCS15))
     print "----Linear Classifier---"
     #print "Accuracy per iteration: {}".format(ACCSL)
     print "Mean Accuracy {:.3f}".format(np.mean(ACCLINEAR))
@@ -831,10 +845,17 @@ def tunner2d():
                 knwb = buildTrainingSet(train_ham,train_spam)
                 hamsPredict = []
                 spamsPredict = []
+<<<<<<< HEAD
                 for i in test_ham:
                     filename = "public/ham"+("%03d"%i)+".txt"
                     hamsPredict.append(simpleBayes(knwb,filename))
                 for i in test:
+=======
+                for i in test_hams:
+                    filename = "public/ham"+("%03d"%i)+".txt"
+                    hamsPredict.append(simpleBayes(knwb,filename))
+                for i in test_spam:
+>>>>>>> 1804eba46ccd0bcf03cd0cb4adcbb83bb1f7131c
                     filename = "public/spam"+("%03d"%i)+".txt"
                     spamsPredict.append(simpleBayes(knwb,filename))
                 TP = spamsPredict.count("spam")
@@ -1021,7 +1042,7 @@ def testTopTen(filename, knwb):
             if w != "":
                 if (w,'s') in knwb:
                     hamDict[w] = knwb[(w,'h')]
-                    spamDict[w] = knwb[(w,'h')]
+                    spamDict[w] = knwb[(w,'s')]
                 else:
                     unkown += 1
     rFile.close()
@@ -1030,8 +1051,18 @@ def testTopTen(filename, knwb):
     sortedHam.reverse()
     sortedSpam = sorted(spamDict.items(),key=operator.itemgetter(1))
     sortedSpam.reverse()
-    print sortedHam[:10]
-    print sortedSpam[:10]
+    sortedHam =sortedHam[:15]
+    sortedSpam = sortedSpam[:15]
+
+    hamScore = 0.0
+    spamScore = 0.0
+    for i in range(len(sortedHam)):
+        hamScore += math.log(sortedHam[i][1])
+        spamScore += math.log(sortedSpam[i][1])
+    if hamScore > spamScore:
+        return "ham"
+    else:
+        return "spam"
 
 
 
