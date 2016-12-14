@@ -18,10 +18,9 @@ import operator
 # 0 -> ham
 # 1 -> spam
 
-AMOUNT = 8
-SPAMICITY = 0.333
-stopWords =['a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', "aren't", 'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', "can't", 'cannot', 'could', "couldn't", 'did', "didn't", 'do', 'does', "doesn't", 'doing', "don't", 'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had', "hadn't", 'has', "hasn't", 'have', "haven't", 'having', 'he', "he'd", "he'll", "he's", 'her', 'here', "here's", 'hers', 'herself', 'him', 'himself', 'his', 'how', "how's", 'i', "i'd", "i'll", "i'm", "i've", 'if', 'in', 'into', 'is', "isn't", 'it', "it's", 'its', 'itself', "let's", 'me', 'more', 'most', "mustn't", 'my', 'myself', 'no', 'nor', 'not', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our', 'ours\tourselves', 'out', 'over', 'own', 'same', "shan't", 'she', "she'd", "she'll", "she's", 'should', "shouldn't", 'so', 'some', 'such', 'than', 'that', "that's", 'the', 'their', 'theirs', 'them', 'themselves', 'then', 'there', "there's", 'these', 'they', '']
-
+AMOUNT = 2
+SPAMICITY = 0.00
+stopWords = ['', 'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', "aren't", 'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', "can't", 'cannot', 'could', "couldn't", 'did', "didn't", 'do', 'does', "doesn't", 'doing', "don't", 'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had', "hadn't", 'has', "hasn't", 'have', "haven't", 'having', 'he', "he'd", "he'll", "he's", 'her', 'here', "here's", 'hers', 'herself', 'him', 'himself', 'his', 'how', "how's", 'i', "i'd", "i'll", "i'm", "i've", 'if', 'in', 'into', 'is', "isn't", 'it', "it's", 'its', 'itself', "let's", 'me', 'more', 'most', "mustn't", 'my', 'myself', 'no', 'nor', 'not', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our', 'ours\tourselves', 'out', 'over', 'own', 'same', "shan't", 'she', "she'd", "she'll", "she's", 'should', "shouldn't", 'so', 'some', 'such', 'than', 'that', "that's", 'the', 'their', 'theirs', 'them', 'themselves', 'then', 'there', "there's", 'these', 'they', "they'd", "they'll", "they're", "they've", 'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was', "wasn't", 'we', "we'd", "we'll", "we're", "we've", 'were', "weren't", 'what', "what's", 'when', "when's", 'where', "where's", 'which', 'while', 'who', "who's", 'whom', 'why', "why's", 'with', "won't", 'would', "wouldn't", 'you', "you'd", "you'll", "you're", "you've", 'your', 'yours', 'yourself', 'yourselves', '']
 def main():
     n = len(sys.argv)
 
@@ -192,7 +191,7 @@ def buildTrainingSet(nham,nspam):
         pwh = knowledgebase[(key[0],'h')] /(wordsHam +totWords)
 
         # ignore words with similar probabilities for spam and ham
-        if (abs(pws-pwh)> max(pws,pwh)*SPAMICITY):
+        if (abs(pws-pwh) / (pws+pwh) > SPAMICITY):
             knwb[key[0],'s'] = pws
             knwb[key[0],'h'] = pwh
     return knwb
@@ -460,7 +459,7 @@ def testBoth():
     ACCLINEAR = []
     ACCKNN = []
     ACCSVC = []
-    for i in range(20):
+    for i in range(25):
         train_ham, train_spam, test_hams, test_spam = divideTestTrain()
         ACCLINEAR.append(getAccuracyFinal(train_ham, train_spam, test_hams, test_spam))
         ACCSIMPLE.append(getAccuracyNaivebayes(train_ham, train_spam, test_hams, test_spam))
@@ -769,7 +768,10 @@ def testTopTen(filename, knwb):
 
     sortedHam = sorted(hamDict.items(),key=operator.itemgetter(1))
     sortedHam.reverse()
+    sortedSpam = sorted(spamDict.items(),key=operator.itemgetter(1))
+    sortedSpam.reverse()
     print sortedHam[:10]
+    print sortedSpam[:10]
 
 
 
