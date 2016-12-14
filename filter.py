@@ -107,7 +107,6 @@ def main():
         trainsH,trainS,testH,testS = divideTestTrain()
         m,c = buildLinearClassifierClone(trainsH,trainS,knwb)
         visualizeClone(knwb,m,c)
->>>>>>> b5cf2c5dbe6ffbb03eaa929bb861b254119374b1
     elif n == 2:
         with open("knowledgebase.p","rb") as handle:
             knwb = pickle.load(handle)
@@ -215,8 +214,6 @@ def buzzwordFeature(filename):
     #print "Buzz:{0},Non:{1},Tot:{2}".format(amountBuzz,amountNon,numWords)
     return amountBuzz
 
-
->>>>>>> b5cf2c5dbe6ffbb03eaa929bb861b254119374b1
 def testsymtoletSingle(filename):
     # remove as much of the headers as possible
     if os.path.isfile(filename):
@@ -818,9 +815,9 @@ def tuneAmaount():
 
 def tunner2d():
     spamrange = np.arange(0,0.9,0.05)
-    amountRange = np.arange(2,20,1)
-    tuneAccs = np.zeros((18,18))
-    tot_iters = 18*18
+    amountRange = np.arange(2,25,1)
+    tuneAccs = np.zeros((18,23))
+    tot_iters = 18*23
     percCounter =0
     xi = 0
     for x in spamrange:
@@ -830,20 +827,33 @@ def tunner2d():
             AMOUNT = y
             for i in range(5):
                 train_ham, train_spam, test_hams, test_spam = divideTestTrain()
-                ACCS.append(getAccuracyFinal(train_ham, train_spam, test_hams, test_spam))
+                knwb = buildTrainingSet(train_ham,train_spam)
+                hamsPredict = []
+                spamsPredict = []
+                for i in testH:
+                    filename = "public/ham"+("%03d"%i)+".txt"
+                    hamsPredict.append(simpleBayes(knwb,filename))
+                for i in testS:
+                    filename = "public/spam"+("%03d"%i)+".txt"
+                    spamsPredict.append(simpleBayes(knwb,filename))
+                TP = spamsPredict.count("spam")
+                TN = hamsPredict.count("ham")
+                FP = spamsPredict.count("ham")
+                FN = hamsPredict.count("spam")
+                ACC = (TP + TN)/(TP + TN + FP + FN)
+                ACCS.append(ACC)
 
             tuneAccs[xi,y-2] = np.mean(ACCS)
             percCounter += 1
             percentCompleted = (percCounter/tot_iters) *100
             print "{:.2f}%".format(percentCompleted)
         xi +=1
-    for i in range(5):
-        xmax = tuneAccs.argmax(0)
-        ymax = tuneAccs.argmax(1)
-        print xmax
-        print ymax
-        print tuneAccs.max()
-        tuneAccs[xmax,ymax] =0.0
+
+    xmax = tuneAccs.argmax(0)
+    ymax = tuneAccs.argmax(1)
+    print xmax
+    print ymax
+    print tuneAccs.max()
 
 def divideTestTrain():
     hamsIs = range(400)
