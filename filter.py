@@ -21,6 +21,12 @@ import operator
 AMOUNT = 2
 SPAMICITY = 0.00
 stopWords = ['', 'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', "aren't", 'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', "can't", 'cannot', 'could', "couldn't", 'did', "didn't", 'do', 'does', "doesn't", 'doing', "don't", 'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had', "hadn't", 'has', "hasn't", 'have', "haven't", 'having', 'he', "he'd", "he'll", "he's", 'her', 'here', "here's", 'hers', 'herself', 'him', 'himself', 'his', 'how', "how's", 'i', "i'd", "i'll", "i'm", "i've", 'if', 'in', 'into', 'is', "isn't", 'it', "it's", 'its', 'itself', "let's", 'me', 'more', 'most', "mustn't", 'my', 'myself', 'no', 'nor', 'not', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our', 'ours\tourselves', 'out', 'over', 'own', 'same', "shan't", 'she', "she'd", "she'll", "she's", 'should', "shouldn't", 'so', 'some', 'such', 'than', 'that', "that's", 'the', 'their', 'theirs', 'them', 'themselves', 'then', 'there', "there's", 'these', 'they', "they'd", "they'll", "they're", "they've", 'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was', "wasn't", 'we', "we'd", "we'll", "we're", "we've", 'were', "weren't", 'what', "what's", 'when', "when's", 'where', "where's", 'which', 'while', 'who', "who's", 'whom', 'why', "why's", 'with', "won't", 'would', "wouldn't", 'you', "you'd", "you'll", "you're", "you've", 'your', 'yours', 'yourself', 'yourselves', '']
+buzzwords = ["free","new","spam","sir","madam"]
+
+AMOUNT = 8
+SPAMICITY = 0.35
+
+
 def main():
     n = len(sys.argv)
 
@@ -60,6 +66,48 @@ def main():
         testSVC(20)
     elif n ==2  and sys.argv[1] == "-testKNN":
         testKNN(20)
+    elif n ==2  and sys.argv[1] == "-numW":
+        for i in range(400):
+            filename = "public/ham"+("%03d"%i)+".txt"
+            val = whiteSpaceFeature(filename)
+        for i in range(100):
+            filename = "public/spam"+("%03d"%i)+".txt"
+            val = whiteSpaceFeature(filename)
+    elif n ==2  and sys.argv[1] == "-numCaps":
+        for i in range(400):
+            filename = "public/ham"+("%03d"%i)+".txt"
+            val = capitalLetterFeature(filename)
+        for i in range(100):
+            filename = "public/spam"+("%03d"%i)+".txt"
+            val = capitalLetterFeature(filename)
+    elif n ==2  and sys.argv[1] == "-numDigs":
+        for i in range(400):
+            filename = "public/ham"+("%03d"%i)+".txt"
+            val = digitFeature(filename)
+        for i in range(100):
+            filename = "public/spam"+("%03d"%i)+".txt"
+            val = digitFeature(filename)
+    elif n ==2  and sys.argv[1] == "-numLinks":
+        for i in range(400):
+            filename = "public/ham"+("%03d"%i)+".txt"
+            val = linkFeature(filename)
+        for i in range(100):
+            filename = "public/spam"+("%03d"%i)+".txt"
+            val = linkFeature(filename)
+    elif n ==2  and sys.argv[1] == "-numBuzz":
+        for i in range(400):
+            filename = "public/ham"+("%03d"%i)+".txt"
+            val = buzzwordFeature(filename)
+        for i in range(100):
+            filename = "public/spam"+("%03d"%i)+".txt"
+            val = buzzwordFeature(filename)
+    elif n ==2  and sys.argv[1] == "-PLOT":
+        with open("knowledgebase.p","rb") as handle:
+            knwb = pickle.load(handle)
+        trainsH,trainS,testH,testS = divideTestTrain()
+        m,c = buildLinearClassifierClone(trainsH,trainS,knwb)
+        visualizeClone(knwb,m,c)
+>>>>>>> b5cf2c5dbe6ffbb03eaa929bb861b254119374b1
     elif n == 2:
         with open("knowledgebase.p","rb") as handle:
             knwb = pickle.load(handle)
@@ -72,6 +120,103 @@ def main():
     else:
         print "Usage: -t    Build Training Set\n"
 
+def whiteSpaceFeature(filename):
+    amountWhite = 0
+    numChar = 0
+    if os.path.isfile(filename):
+        rFile = open(filename,'r' )
+        for line in rFile:
+            numChar += len(line)
+            nline = re.sub(r'[\S]',"",line)
+            amountWhite += len(nline)
+
+    return amountWhite/numChar
+
+def capitalLetterFeature(filename):
+    amountCaps = 0
+    amountNon = 0
+    numChar = 0
+    if os.path.isfile(filename):
+        rFile = open(filename,'r' )
+        #for line in rFile:
+        text = rFile.read()
+        text = re.sub('\s+',"",text)
+        onlyCaps = re.sub(r'[^A-Z]',"",text)
+        onlyLower = re.sub(r'[^a-z]',"",text)
+        amountCaps = len(onlyCaps)
+        amountNon = len(onlyLower)
+        numChar = amountCaps+amountNon
+        #if (numChar == 0):
+        #print "Caps:{0},Non:{1},Tot:{2}".format(amountCaps,amountNon,numChar)
+        #print "Chars:{0}, Caps:{1}".format(numChar,amountCaps)
+
+    return amountCaps/numChar
+
+def digitFeature(filename):
+    amountDigits = 0
+    amountNon = 0
+    numChar = 0
+    if os.path.isfile(filename):
+        rFile = open(filename,'r' )
+        #for line in rFile:
+        text = rFile.read()
+        text = re.sub('\s+',"",text)
+        onlyDigits = re.sub(r'[^0-9]',"",text)
+        onlyNon = re.sub(r'[0-9]',"",text)
+        amountDigits = len(onlyDigits)
+        amountNon = len(onlyNon)
+        numChar = amountDigits+amountNon
+        #print onlyNon
+        #if (numChar == 0):
+        #print "Caps:{0},Non:{1},Tot:{2}".format(amountCaps,amountNon,numChar)
+
+    return amountDigits/numChar
+
+def linkFeature(filename):
+    amountLinks = 0
+    amountNon = 0
+    numWords = 0
+    if os.path.isfile(filename):
+        rFile = open(filename,'r' )
+        for line in rFile:
+            words = line.split(" ")
+            #text = re.sub('\s+',"",line)
+            for w in words:
+                if ("http" in w) or ("www." in w):
+                    amountLinks += 1
+                else:
+                    amountNon += 1
+                    #if "www" in line:
+                        #print line
+        numWords = amountLinks+amountNon
+
+    #print "Links:{0},Non:{1},Tot:{2}".format(amountLinks,amountNon,numWords)
+    return amountLinks/numWords
+
+def buzzwordFeature(filename):
+    amountBuzz = 0
+    amountNon = 0
+    numWords = 0
+    if os.path.isfile(filename):
+        rFile = open(filename,'r' )
+        for line in rFile:
+            words = line.split(" ")
+            #text = re.sub('\s+',"",line)
+            for w in words:
+                for b in buzzwords:
+                    if (b in w):
+                        amountBuzz += 1
+                    else:
+                        amountNon += 1
+                        #if "www" in line:
+                            #print line
+        numWords = amountBuzz+amountNon
+
+    #print "Buzz:{0},Non:{1},Tot:{2}".format(amountBuzz,amountNon,numWords)
+    return amountBuzz
+
+
+>>>>>>> b5cf2c5dbe6ffbb03eaa929bb861b254119374b1
 def testsymtoletSingle(filename):
     # remove as much of the headers as possible
     if os.path.isfile(filename):
@@ -85,7 +230,7 @@ def testsymtoletSingle(filename):
         nospaces = nospaces.replace(",","")
         nospaces = nospaces.replace(".","")
         allcount = len(nospaces)
-        symbolCount = len(re.sub(r'[A-za-z]',"",nospaces))
+        symbolCount = len(re.sub(r'[A-Za-z]',"",nospaces))
         characterCount = allcount-symbolCount
         prop = -0.5
         try:
@@ -252,6 +397,40 @@ def buildTrainingSetSimple(nham,nspam):
         knwb[key[0],'h'] = pwh
     return knwb
 
+def buildLinearClassifierClone(trainsH,trainS,knwb):
+    hamsX = []
+    hamsY = []
+    spamsX = []
+    spamsY = []
+
+    for i in trainsH:
+        filename = "public/ham"+("%03d"%i)+".txt"
+        if os.path.isfile(filename):
+            prob, bang = probability_and_proportion(filename,knwb)
+            caps = whiteSpaceFeature(filename)
+            digs = digitFeature(filename)
+            links = linkFeature(filename)
+            buzz = buzzwordFeature(filename)
+            hamsX.append(prob)
+            hamsY.append(buzz)
+
+
+    for i in trainS:
+        filename = "public/spam"+("%03d"%i)+".txt"
+        if os.path.isfile(filename):
+            prob, bang = probability_and_proportion(filename,knwb)
+            caps = whiteSpaceFeature(filename)
+            digs = digitFeature(filename)
+            links = linkFeature(filename)
+            buzz = buzzwordFeature(filename)
+            spamsX.append(prob)
+            spamsY.append(buzz)
+
+    center1 = [np.mean(hamsX),np.mean(hamsY)]
+    center2 =[np.mean(spamsX),np.mean(spamsY)]
+    m,c = findLinearBoundry(center1,center2)
+    return m,c
+
 
 def buildLinearClassifier(trainsH,trainS,knwb):
     hamsProb = []
@@ -295,8 +474,6 @@ def probability_and_proportion(filename, knwb):
                 if (w,'s') in knwb:
                     spamScore += math.log(knwb[(w,'s')])
                     hamScore += math.log(knwb[(w,'h')])
-                #else:
-                #    spamScore += math.log(0.99)
     rFile.close()
     spamScore += math.log(1/5)
     hamScore += math.log(4/5)
@@ -340,6 +517,78 @@ def classify(filename,knwb,m,c):
     elif ps >=1:
         return "spam"
     return "ham"
+
+def visualizeClone(knwb,m,c):
+    val1 = 0
+    val2 = 0
+    val3 = 0
+    val4 = 0
+    n1 = 0
+    n2 = 0
+    fig = plt.figure()
+    for i in range(400):
+        filename = "public/ham"+("%03d"%i)+".txt"
+        if os.path.isfile(filename):
+            prob, bang = probability_and_proportion(filename,knwb)
+            caps = whiteSpaceFeature(filename)
+            digs = digitFeature(filename)
+            links = linkFeature(filename)
+            buzz = buzzwordFeature(filename)
+            val1 += prob
+            val2 += buzz
+            n1 += 1
+            plt.scatter(prob,buzz, c='b')
+
+
+    for i in range(100):
+        filename = "public/spam"+("%03d"%i)+".txt"
+        if os.path.isfile(filename):
+            prob, bang = probability_and_proportion(filename,knwb)
+            caps = whiteSpaceFeature(filename)
+            digs = digitFeature(filename)
+            links = linkFeature(filename)
+            buzz = buzzwordFeature(filename)
+            val3 += prob
+            val4 += buzz
+            n2 += 1
+            plt.scatter(prob,buzz, c='r')
+
+    for i in range(100):
+        filename = "automarker/emails/spam"+("%03d"%i)+".txt"
+        if os.path.isfile(filename):
+            prob, bang = probability_and_proportion(filename,knwb)
+            caps = whiteSpaceFeature(filename)
+            digs = digitFeature(filename)
+            links = linkFeature(filename)
+            buzz = buzzwordFeature(filename)
+            l = classify(filename,knwb,m,c)
+            plt.scatter(prob,buzz, c= 'r' if l =="spam" else 'b', marker= 'x',s=50)
+
+    for i in range(400):
+        filename = "automarker/emails/ham"+("%03d"%i)+".txt"
+        if os.path.isfile(filename):
+            prob, bang = probability_and_proportion(filename,knwb)
+            caps = whiteSpaceFeature(filename)
+            digs = digitFeature(filename)
+            links = linkFeature(filename)
+            buzz = buzzwordFeature(filename)
+            l = classify(filename,knwb,m,c)
+            plt.scatter(prob,buzz, c= 'r' if l =="spam" else 'b', marker= 'D',s=50)
+
+    xx = np.linspace(0,2,10)
+    yy = xx*m+c
+    plt.plot(xx,yy,"k-",linewidth=3)
+    plt.xlim(0.7,1.4)
+    plt.ylim(-10,100)
+    plt.grid(True)
+    val1 = (val1/n1)
+    val2 = (val2/n1)
+    val3 = val3/n2
+    val4 = val4/n2
+    plt.scatter(val1,val2,c='g',s=100)
+    plt.scatter(val3,val4,c='g',s=100)
+    plt.show()
+
 
 def visualize(m,c,knwb):
 
