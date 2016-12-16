@@ -6,118 +6,51 @@ import cPickle as pickle
 import os
 import math
 import numpy as np
-from matplotlib import pyplot as plt
-from matplotlib import colors
 from sklearn.svm import SVC
-from sklearn.linear_model import Perceptron
 from sklearn.neighbors import KNeighborsClassifier
 import random
-import platform
 import operator
 
 # 0 -> ham
 # 1 -> spam
 
-AMOUNT = 2
-SPAMICITY = 0.00
 stopWords = ["", "a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "aren't", "as", "at", "be", "because", "been", "before", "being", "below", "between", "both", "but", "by", "can\'t", "cannot", "could", "couldn\'t", "did", "didn\'t", "do", "does", "doesn\'t", "doing", "don\'t", "down", "during", "each", "few", "for", "from", "further", "had", "hadn\'t", "has", "hasn\'t", "have", "haven\'t", "having", "he", "he\'d", "he\'ll", "he\'s", "her", "here", "here\'s", "hers", "herself", "him", "himself", "his", "how", "how\'s", "i", "i\'d", "i\'ll", "i\'m", "i\'ve", "if", "in", "into", "is", "isn\'t", "it", "it\'s", "its", "itself", "let\'s", "me", "more", "most", "mustn\'t", "my", "myself", "no", "nor", "not", "of", "off", "on", "once", "only", "or", "other", "ought", "our", "ours","ourselves", "out", "over", "own", "same", "shan\'t", "she", "she\'d", "she\'ll", "she\'s", "should", "shouldn\'t", "so", "some", "such", "than", "that", "that\'s", "the", "their", "theirs", "them", "themselves", "then", "there", "there\'s", "these", "they", "they\'d", "they\'ll", "they\'re", "they\'ve", "this", "those", "through", "to", "too", "under", "until", "up", "very", "was", "wasn\'t", "we", "we\'d", "we\'ll", "we\'re", "we\'ve", "were", "weren\'t", "what", "what\'s", "when", "when\'s", "where", "where\'s", "which", "while", "who", "who\'s", "whom", "why", "why\'s", "with", "won\'t", "would", "wouldn\'t", "you", "you\'d", "you\'ll", "you\'re", "you\'ve", "your", "yours", "yourself", "yourselves", ""]
-buzzwords = ["free","new","spam","sir","madam"]
 
-AMOUNT = 8
-SPAMICITY = 0.35
+AMOUNT = 18
+SPAMICITY = 0.58
 
 
 def main():
     n = len(sys.argv)
 
     if n == 2 and sys.argv[1] == "-t":
-
         if os.path.isfile("knowledgebase.p"):
             os.remove("knowledgebase.p")
         knowledgebase = buildTrainingSet(range(400),range(100))
-        m,c =buildLinearClassifier(range(400),range(100),knowledgebase)
-        writeLinearFile(m,c)
         with open("knowledgebase.p","wb") as handle:
             pickle.dump(knowledgebase, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-    elif n ==2  and sys.argv[1] == "-tAll":
-        with open("knowledgebase.p","rb") as handle:
-            knwb = pickle.load(handle)
-        m,c = readLinearFile()
-        visualize(m,c,knwb)
-
-    elif n ==2  and sys.argv[1] == "-simpleAcc":
-        testMultipleSimpleBayes()
-    elif n ==2  and sys.argv[1] == "-tB":
-        testBoth()
-    elif n ==2  and sys.argv[1] == "-t10":
-        with open("knowledgebase.p","rb") as handle:
-            knwb = pickle.load(handle)
-        testTopTen("public\spam000.txt",knwb)
-    elif n ==2  and sys.argv[1] == "-ca":
-        testMultipleComplexBayes()
-    elif n ==2  and sys.argv[1] == "-tuneS":
-        tuneSpamicity()
-    elif n ==2  and sys.argv[1] == "-tuneA":
-        tuneAmaount()
-    elif n ==2  and sys.argv[1] == "-tune2d":
-        tunner2d()
-    elif n ==2  and sys.argv[1] == "-testSVC":
-        testSVC(20)
-    elif n ==2  and sys.argv[1] == "-testKNN":
-        testKNN(20)
-    elif n ==2  and sys.argv[1] == "-numW":
-        for i in range(400):
-            filename = "public/ham"+("%03d"%i)+".txt"
-            val = whiteSpaceFeature(filename)
-        for i in range(100):
-            filename = "public/spam"+("%03d"%i)+".txt"
-            val = whiteSpaceFeature(filename)
-    elif n ==2  and sys.argv[1] == "-numCaps":
-        for i in range(400):
-            filename = "public/ham"+("%03d"%i)+".txt"
-            val = capitalLetterFeature(filename)
-        for i in range(100):
-            filename = "public/spam"+("%03d"%i)+".txt"
-            val = capitalLetterFeature(filename)
-    elif n ==2  and sys.argv[1] == "-numDigs":
-        for i in range(400):
-            filename = "public/ham"+("%03d"%i)+".txt"
-            val = digitFeature(filename)
-        for i in range(100):
-            filename = "public/spam"+("%03d"%i)+".txt"
-            val = digitFeature(filename)
-    elif n ==2  and sys.argv[1] == "-numLinks":
-        for i in range(400):
-            filename = "public/ham"+("%03d"%i)+".txt"
-            val = linkFeature(filename)
-        for i in range(100):
-            filename = "public/spam"+("%03d"%i)+".txt"
-            val = linkFeature(filename)
-    elif n ==2  and sys.argv[1] == "-numBuzz":
-        for i in range(400):
-            filename = "public/ham"+("%03d"%i)+".txt"
-            val = buzzwordFeature(filename)
-        for i in range(100):
-            filename = "public/spam"+("%03d"%i)+".txt"
-            val = buzzwordFeature(filename)
-    elif n ==2  and sys.argv[1] == "-PLOT":
-        with open("knowledgebase.p","rb") as handle:
-            knwb = pickle.load(handle)
-        trainsH,trainS,testH,testS = divideTestTrain()
-        m,c = buildLinearClassifierClone(trainsH,trainS,knwb)
-        visualizeClone(knwb,m,c)
+        if os.path.isfile("knnClassifier.p"):
+            os.remove("knnClassifier.p")
+        knn = createKNN(range(400),range(100),knowledgebase)
+        with open("knnClassifier.p","wb") as handle:
+            pickle.dump(knn, handle, protocol = pickle.HIGHEST_PROTOCOL)
     elif n == 2:
-        with open("knowledgebase.p","rb") as handle:
-            knwb = pickle.load(handle)
-        m,c = readLinearFile()
-        if os.path.isfile(sys.argv[1]):
-            print classify(sys.argv[1],knwb,m,c) +"\n"
+        if os.path.isfile("knowledgebase.p"):
+            with open("knowledgebase.p","rb") as handle:
+                knwb = pickle.load(handle)
+                if os.path.isfile("knnClassifier.p"):
+                    with open("knnClassifier.p","rb") as handle:
+                        knn  = pickle.load(handle)
+                        if os.path.isfile(sys.argv[1]):
+                            print classify(sys.argv[1],knwb,knn) +"\n"
+                        else:
+                            print sys.argv[1] +" was not found!\n"
+                else:
+                    print "knnClassifier.p was not found!\n"
         else:
-            print sys.argv[1] +" was not found!\n"
-
+            print "knowledgebase.p was not found!\n"
     else:
-        print "Usage: See code\n"
+        print "Invalid Parameters\n"
 
 def whiteSpaceFeature(filename):
     amountWhite = 0
@@ -191,29 +124,6 @@ def linkFeature(filename):
 
     #print "Links:{0},Non:{1},Tot:{2}".format(amountLinks,amountNon,numWords)
     return amountLinks/numWords
-
-def buzzwordFeature(filename):
-    amountBuzz = 0
-    amountNon = 0
-    numWords = 0
-    if os.path.isfile(filename):
-        rFile = open(filename,'r' )
-        for line in rFile:
-            words = line.split(" ")
-            #text = re.sub('\s+',"",line)
-            for w in words:
-                for b in buzzwords:
-                    if (b in w):
-                        amountBuzz += 1
-                    else:
-                        amountNon += 1
-                        #if "www" in line:
-                            #print line
-        numWords = amountBuzz+amountNon
-
-    #print "Buzz:{0},Non:{1},Tot:{2}".format(amountBuzz,amountNon,numWords)
-    return amountBuzz
-
 
 def testsymtoletSingle(filename):
     # remove as much of the headers as possible
@@ -395,41 +305,6 @@ def buildTrainingSetSimple(nham,nspam):
         knwb[key[0],'h'] = pwh
     return knwb
 
-def buildLinearClassifierClone(trainsH,trainS,knwb):
-    hamsX = []
-    hamsY = []
-    spamsX = []
-    spamsY = []
-
-    for i in trainsH:
-        filename = "public/ham"+("%03d"%i)+".txt"
-        if os.path.isfile(filename):
-            prob, bang = probability_and_proportion(filename,knwb)
-            caps = whiteSpaceFeature(filename)
-            digs = digitFeature(filename)
-            links = linkFeature(filename)
-            buzz = buzzwordFeature(filename)
-            hamsX.append(prob)
-            hamsY.append(buzz)
-
-
-    for i in trainS:
-        filename = "public/spam"+("%03d"%i)+".txt"
-        if os.path.isfile(filename):
-            prob, bang = probability_and_proportion(filename,knwb)
-            caps = whiteSpaceFeature(filename)
-            digs = digitFeature(filename)
-            links = linkFeature(filename)
-            buzz = buzzwordFeature(filename)
-            spamsX.append(prob)
-            spamsY.append(buzz)
-
-    center1 = [np.mean(hamsX),np.mean(hamsY)]
-    center2 =[np.mean(spamsX),np.mean(spamsY)]
-    m,c = findLinearBoundry(center1,center2)
-    return m,c
-
-
 def buildLinearClassifier(trainsH,trainS,knwb):
     hamsProb = []
     hamsbang = []
@@ -489,180 +364,17 @@ def findLinearBoundry(center1, center2):
     c = y-m*x
     return m,c
 
-def writeLinearFile(m,c):
-    wFile = open('linear.txt','w')
-    wFile.write(str(m))
-    wFile.write("\n")
-    wFile.write(str(c))
-    wFile.close()
-
-def readLinearFile():
-    rFile = open('linear.txt','r')
-    m = float(rFile.readline())
-    c = float(rFile.readline())
-    return m,c
-
 def linearPredict(p,m,c):
     liney = m*p[0]+c
     if (p[1] >liney):
         return "spam"
     return "ham"
 
-def classify(filename,knwb,m,c):
+def classify(filename,knwb,knn):
     ps, ratio = probability_and_proportion(filename,knwb)
-    if ratio >= 0:
-        return linearPredict([ps,ratio],m,c)
-    elif ps >=1:
-        return "spam"
-    return "ham"
-
-def visualizeClone(knwb,m,c):
-    val1 = 0
-    val2 = 0
-    val3 = 0
-    val4 = 0
-    n1 = 0
-    n2 = 0
-    fig = plt.figure()
-    for i in range(400):
-        filename = "public/ham"+("%03d"%i)+".txt"
-        if os.path.isfile(filename):
-            prob, bang = probability_and_proportion(filename,knwb)
-            caps = whiteSpaceFeature(filename)
-            digs = digitFeature(filename)
-            links = linkFeature(filename)
-            buzz = buzzwordFeature(filename)
-            val1 += prob
-            val2 += buzz
-            n1 += 1
-            plt.scatter(prob,buzz, c='b')
-
-
-    for i in range(100):
-        filename = "public/spam"+("%03d"%i)+".txt"
-        if os.path.isfile(filename):
-            prob, bang = probability_and_proportion(filename,knwb)
-            caps = whiteSpaceFeature(filename)
-            digs = digitFeature(filename)
-            links = linkFeature(filename)
-            buzz = buzzwordFeature(filename)
-            val3 += prob
-            val4 += buzz
-            n2 += 1
-            plt.scatter(prob,buzz, c='r')
-
-    for i in range(100):
-        filename = "automarker/emails/spam"+("%03d"%i)+".txt"
-        if os.path.isfile(filename):
-            prob, bang = probability_and_proportion(filename,knwb)
-            caps = whiteSpaceFeature(filename)
-            digs = digitFeature(filename)
-            links = linkFeature(filename)
-            buzz = buzzwordFeature(filename)
-            l = classify(filename,knwb,m,c)
-            plt.scatter(prob,buzz, c= 'r' if l =="spam" else 'b', marker= 'x',s=50)
-
-    for i in range(400):
-        filename = "automarker/emails/ham"+("%03d"%i)+".txt"
-        if os.path.isfile(filename):
-            prob, bang = probability_and_proportion(filename,knwb)
-            caps = whiteSpaceFeature(filename)
-            digs = digitFeature(filename)
-            links = linkFeature(filename)
-            buzz = buzzwordFeature(filename)
-            l = classify(filename,knwb,m,c)
-            plt.scatter(prob,buzz, c= 'r' if l =="spam" else 'b', marker= 'D',s=50)
-
-    xx = np.linspace(0,2,10)
-    yy = xx*m+c
-    plt.plot(xx,yy,"k-",linewidth=3)
-    plt.xlim(0.7,1.4)
-    plt.ylim(-10,100)
-    plt.grid(True)
-    val1 = (val1/n1)
-    val2 = (val2/n1)
-    val3 = val3/n2
-    val4 = val4/n2
-    plt.scatter(val1,val2,c='g',s=100)
-    plt.scatter(val3,val4,c='g',s=100)
-    plt.show()
-
-
-def visualize(m,c,knwb):
-
-    fig = plt.figure()
-    for i in range(400):
-        filename = "public/ham"+("%03d"%i)+".txt"
-        if os.path.isfile(filename):
-            prob, bang = probability_and_proportion(filename,knwb)
-            plt.scatter(prob,bang, c='b')
-
-
-    for i in range(100):
-        filename = "public/spam"+("%03d"%i)+".txt"
-        if os.path.isfile(filename):
-            prob, bang = probability_and_proportion(filename,knwb)
-            plt.scatter(prob,bang, c='r')
-
-
-
-
-    for i in range(100):
-        filename = "automarker/emails/spam"+("%03d"%i)+".txt"
-        if os.path.isfile(filename):
-            prob, bang = probability_and_proportion(filename,knwb)
-            l = classify(filename,knwb,m,c)
-            plt.scatter(prob,bang, c= 'r' if l =="spam" else 'b', marker= 'x',s=50)
-
-    for i in range(400):
-        filename = "automarker/emails/ham"+("%03d"%i)+".txt"
-        if os.path.isfile(filename):
-            prob, bang = probability_and_proportion(filename,knwb)
-            l = classify(filename,knwb,m,c)
-            plt.scatter(prob,bang, c= 'r' if l =="spam" else 'b', marker= 'D',s=50)
-
-    xx = np.linspace(0,2,10)
-    yy = xx*m+c
-    plt.plot(xx,yy,"k-",linewidth=3)
-    plt.xlim(0,2)
-    plt.ylim(-1,2)
-    plt.grid(True)
-    plt.show()
-
-def getAccuracyNaivebayes(trainsH,trainS,testH,testS):
-    knwb = buildTrainingSetSimple(trainsH,trainS)
-    hamsPredict = []
-    spamsPredict = []
-    for i in testH:
-        filename = "public/ham"+("%03d"%i)+".txt"
-        hamsPredict.append(simpleBayes(knwb,filename))
-    for i in testS:
-        filename = "public/spam"+("%03d"%i)+".txt"
-        spamsPredict.append(simpleBayes(knwb,filename))
-    TP = spamsPredict.count("spam")
-    TN = hamsPredict.count("ham")
-    FP = spamsPredict.count("ham")
-    FN = hamsPredict.count("spam")
-    ACC = (TP + TN)/(TP + TN + FP + FN)
-    return ACC
-
-def getAccuracyFinal(trainsH,trainS,testH,testS):
-    knwb = buildTrainingSet(trainsH,trainS)
-    m,c = buildLinearClassifier(trainsH,trainS,knwb)
-    hamsPredict = []
-    spamsPredict = []
-    for i in testH:
-        filename = "public/ham"+("%03d"%i)+".txt"
-        hamsPredict.append(classify(filename,knwb,m,c))
-    for i in testS:
-        filename = "public/spam"+("%03d"%i)+".txt"
-        spamsPredict.append(classify(filename,knwb,m,c))
-    TP = spamsPredict.count("spam")
-    TN = hamsPredict.count("ham")
-    FP = spamsPredict.count("ham")
-    FN = hamsPredict.count("spam")
-    ACC = (TP + TN)/(TP + TN + FP + FN)
-    return ACC
+    white = whiteSpaceFeature(filename)
+    caps = capitalLetterFeature(filename)
+    return knn.predict(np.matrix([ps,ratio,caps,white]))[0]
 
 def simpleBayes(knwb,filename):
     spamScore =0
@@ -682,38 +394,47 @@ def simpleBayes(knwb,filename):
     hamScore += math.log(4/5)
     if (spamScore >= hamScore):
         return "spam"
-    return "ham"
+    elif (spamScore == hamScore):
+        val = random.randint(0,1)
+        if val == 0:
+            return "spam"
+        else:
+            return "ham"
+    else:
+        return "ham"
 
-def testMultipleSimpleBayes():
-    ACCS = []
-    for i in range(20):
-        train_ham, train_spam, test_hams, test_spam = divideTestTrain()
-        ACCS.append(getAccuracyNaivebayes(train_ham, train_spam, test_hams, test_spam))
-    print "Accuracy per iteration: {}".format(ACCS)
-    print "Mean Accuracy {}".format(np.mean(ACCS))
-
-def testMultipleComplexBayes():
-    ACCS = []
-    for i in range(20):
-        train_ham, train_spam, test_hams, test_spam = divideTestTrain()
-        ACCS.append(getAccuracyFinal(train_ham, train_spam, test_hams, test_spam))
-    print "Accuracy per iteration: {}".format(ACCS)
-    print "Mean Accuracy {}".format(np.mean(ACCS))
-
-def testBoth():
+def testAll(knn,knwb):
     ACCSIMPLE = []
     ACCIMBAYES = []
+    TPRIMBAYES = []
+    FPRIMBAYES = []
     ACCLINEAR = []
     ACCKNN = []
+    TPRKNN = []
+    FPRKNN = []
     ACCSVC = []
+    TPRSVC = []
+    FPRSVC = []
     ACCS15 = []
-    for i in range(10):
+    TPRLINEAR = []
+    TPRSIMPLE = []
+    FPRLINEAR = []
+    FPRSIMPLE = []
+    for i in range(30):
+        print str(i*100/30)+"%"
         train_ham, train_spam, test_hams, test_spam = divideTestTrain()
-        ACCLINEAR.append(getAccuracyFinal(train_ham, train_spam, test_hams, test_spam))
-        ACCSIMPLE.append(getAccuracyNaivebayes(train_ham, train_spam, test_hams, test_spam))
-        knwb = buildTrainingSet(train_ham,train_spam)
+        ACC,TPR,FPR = getAccuracyFinal(train_ham, train_spam, test_hams, test_spam)
+        ACCLINEAR.append(ACC)
+        TPRLINEAR.append(TPR)
+        FPRLINEAR.append(FPR)
+        ACC,TPR,FPR = getAccuracyNaivebayes(train_ham, train_spam, test_hams, test_spam)
+        ACCSIMPLE.append(ACC)
+        TPRSIMPLE.append(TPR)
+        FPRSIMPLE.append(FPR)
+
+        #knwb = buildTrainingSet(train_ham,train_spam)
         # KNN Classifier, SVC, improved Bayes
-        knn = createKNN(train_ham, train_spam,knwb,w='distance',n =5)
+        #knn = createKNN(train_ham, train_spam,knwb,w='distance',n =5)
         svc = createSVC(train_ham, train_spam,knwb)
 
         hamsPredict = []
@@ -727,18 +448,26 @@ def testBoth():
         for i in test_hams:
             filename = "public/ham"+("%03d"%i)+".txt"
             prob, ratio = probability_and_proportion(filename,knwb)
-            hamsPredict.append(knn.predict(np.matrix([prob,ratio])))
+            caps = capitalLetterFeature(filename)
+            white = whiteSpaceFeature(filename)
+            #digs = digitFeature(filename)
+            #links = linkFeature(filename)
+            hamsPredict.append(knn.predict(np.matrix([prob,ratio,caps,white])))
             hamsPredictS.append(svcPredict(svc,filename,knwb))
-            hamsPredictB =simpleBayes(knwb,filename)
-            hamsPredict15 =testTopTen(filename,knwb)
+            hamsPredictB.append(simpleBayes(knwb,filename))
+            hamsPredict15.append(testTopTen(filename,knwb))
 
         for i in test_spam:
             filename = "public/spam"+("%03d"%i)+".txt"
             prob, ratio = probability_and_proportion(filename,knwb)
-            spamsPredict.append(knn.predict(np.matrix([prob,ratio])))
+            caps = capitalLetterFeature(filename)
+            white = whiteSpaceFeature(filename)
+            #digs = digitFeature(filename)
+            #links = linkFeature(filename)
+            spamsPredict.append(knn.predict(np.matrix([prob,ratio,caps,white])))
             spamsPredictS.append(svcPredict(svc,filename,knwb))
-            spamsPredictB =simpleBayes(knwb,filename)
-            spamsPredict15 =testTopTen(filename,knwb)
+            spamsPredictB.append(simpleBayes(knwb,filename))
+            spamsPredict15.append(testTopTen(filename,knwb))
 
         TP = spamsPredict.count("spam")
         TN = hamsPredict.count("ham")
@@ -746,6 +475,13 @@ def testBoth():
         FN = hamsPredict.count("spam")
         ACC = (TP + TN)/(TP + TN + FP + FN)
         ACCKNN.append(ACC)
+        try:
+            TPR = TP/(TP+FN)
+            FPR = FP/(FP+TN)
+            TPRKNN.append(TPR)
+            FPRKNN.append(FPR)
+        except ZeroDivisionError:
+            print "vals was 0\n"
 
         TP = spamsPredictS.count("spam")
         TN = hamsPredictS.count("ham")
@@ -753,6 +489,14 @@ def testBoth():
         FN = hamsPredictS.count("spam")
         ACC = (TP + TN)/(TP + TN + FP + FN)
         ACCSVC.append(ACC)
+        try:
+            TPR = TP/(TP+FN)
+            FPR = FP/(FP+TN)
+            TPRSVC.append(TPR)
+            FPRSVC.append(FPR)
+        except ZeroDivisionError:
+            print "vals was 0\n"
+
 
         TP = spamsPredictB.count("spam")
         TN = hamsPredictB.count("ham")
@@ -760,6 +504,10 @@ def testBoth():
         FN = hamsPredictB.count("spam")
         ACC = (TP + TN)/(TP + TN + FP + FN)
         ACCIMBAYES.append(ACC)
+        TPR = TP/(TP+FN)
+        FPR = FP/(FP+TN)
+        TPRIMBAYES.append(TPR)
+        FPRIMBAYES.append(FPR)
         TP = spamsPredict15.count("spam")
         TN = hamsPredict15.count("ham")
         FP = spamsPredict15.count("ham")
@@ -767,108 +515,33 @@ def testBoth():
         ACC = (TP + TN)/(TP + TN + FP + FN)
         ACCS15.append(ACC)
 
+
     print "----Simple Naive Bayes---"
     #print "Accuracy per iteration: {}".format(ACCSS)
     print "Mean Accuracy {:.3f}".format(np.mean(ACCSIMPLE))
+    print "TPR = {0}, FPR = {1}".format(np.mean(TPRSIMPLE),np.mean(FPRSIMPLE))
     print "----Improved Bayes---"
     #print "Accuracy per iteration: {}".format(ACCSL)
     print "Mean Accuracy {:.3f}".format(np.mean(ACCIMBAYES))
+    print "TPR = {0}, FPR = {1}".format(np.mean(TPRIMBAYES),np.mean(FPRIMBAYES))
     print "----Top 15---"
     #print "Accuracy per iteration: {}".format(ACCSL)
     print "Mean Accuracy {:.3f}".format(np.mean(ACCS15))
     print "----Linear Classifier---"
     #print "Accuracy per iteration: {}".format(ACCSL)
     print "Mean Accuracy {:.3f}".format(np.mean(ACCLINEAR))
+    print "TPR = {0}, FPR = {1}".format(np.mean(TPRLINEAR),np.mean(FPRLINEAR))
+
     print "----KNN Classifier---"
     #print "Accuracy per iteration: {}".format(ACCSL)
     print "Mean Accuracy {:.3f}".format(np.mean(ACCKNN))
+    print "TPR = {0}, FPR = {1}".format(np.mean(TPRKNN),np.mean(FPRKNN))
     print "----SVC Classifier---"
     #print "Accuracy per iteration: {}".format(ACCSL)
     print "Mean Accuracy {:.3f}".format(np.mean(ACCSVC))
+    print "TPR = {0}, FPR = {1}".format(np.mean(TPRSVC),np.mean(FPRSVC))
 
-def tuneSpamicity():
-    tuneAccs =[]
-    plat = platform.system()
-    xx = np.linspace(0,0.9,90)
-    ccc = 0
-    for x in xx:
-        ACCS = []
-        SPAMICITY = x
-        for i in range(10):
-            train_ham, train_spam, test_hams, test_spam = divideTestTrain()
-            ACCS.append(getAccuracyFinal(train_ham, train_spam, test_hams, test_spam))
-        tuneAccs.append(np.mean(ACCS))
-        ccc+=1
-        print ccc
-    fig = plt.figure()
-    plt.plot(xx,tuneAccs,"k-",linewidth=3)
-    plt.xlim(0,0.9)
-    plt.ylim(0,1)
-    plt.grid(True)
-    plt.show()
-
-def tuneAmaount():
-    tuneAccs =[]
-    plat = platform.system()
-    xx = np.arange(2,13)
-    ccc = 0
-    for x in xx:
-        ACCS = []
-        AMOUNT = x
-        for i in range(10):
-            train_ham, train_spam, test_hams, test_spam = divideTestTrain()
-            ACCS.append(getAccuracyFinal(train_ham, train_spam, test_hams, test_spam))
-        tuneAccs.append(np.mean(ACCS))
-        ccc+=1
-        print ccc
-    fig = plt.figure()
-    plt.plot(xx,tuneAccs,"k-",linewidth=3)
-    plt.xlim(2,12)
-    plt.ylim(0,1)
-    plt.grid(True)
-    plt.show()
-
-def tunner2d():
-    spamrange = np.arange(0,0.9,0.05)
-    amountRange = np.arange(2,25,1)
-    tuneAccs = np.zeros((18,23))
-    tot_iters = 18*23
-    percCounter =0
-    xi = 0
-    for x in spamrange:
-        SPAMICITY = x
-        for y in amountRange:
-            ACCS = []
-            AMOUNT = y
-            for i in range(5):
-                train_ham, train_spam, test_hams, test_spam = divideTestTrain()
-                knwb = buildTrainingSet(train_ham,train_spam)
-                hamsPredict = []
-                spamsPredict = []
-                for i in test_hams:
-                    filename = "public/ham"+("%03d"%i)+".txt"
-                    hamsPredict.append(simpleBayes(knwb,filename))
-                for i in test_spam:
-                    filename = "public/spam"+("%03d"%i)+".txt"
-                    spamsPredict.append(simpleBayes(knwb,filename))
-                TP = spamsPredict.count("spam")
-                TN = hamsPredict.count("ham")
-                FP = spamsPredict.count("ham")
-                FN = hamsPredict.count("spam")
-                ACC = (TP + TN)/(TP + TN + FP + FN)
-                ACCS.append(ACC)
-
-            tuneAccs[xi,y-2] = np.mean(ACCS)
-            percCounter += 1
-            percentCompleted = (percCounter/tot_iters) *100
-            print "{:.2f}%".format(percentCompleted)
-        xi +=1
-
-    xmax = tuneAccs.argmax(0)
-    ymax = tuneAccs.argmax(1)
-    print xmax
-    print ymax
-    print tuneAccs.max()
+    print "\nNum Of Stopwords : {0}".format(len(stopWords))
 
 def divideTestTrain():
     hamsIs = range(400)
@@ -895,31 +568,57 @@ def divideTestTrain():
 def createSVC(train_ham, train_spam,knwb, k="rbf"):
     hF1 = []
     hF2 = []
+    hF3 = []
+    hF4 = []
+    #hF5 = []
     sF1 = []
     sF2 = []
+    sF3 = []
+    sF4 = []
+    #sF5 = []
 
     for i in train_ham:
         filename = "public/ham"+("%03d"%i)+".txt"
         if os.path.isfile(filename):
             prob, ratio = probability_and_proportion(filename,knwb)
+            caps = capitalLetterFeature(filename)
+            white = whiteSpaceFeature(filename)
+            #digs = digitFeature(filename)
+            #links = linkFeature(filename)
             if (ratio >= 0):
                 hF1.append(prob)
                 hF2.append(ratio)
+                hF3.append(caps)
+                hF4.append(white)
+                #hF5.append(links)
 
     for i in train_spam:
         filename = "public/spam"+("%03d"%i)+".txt"
         if os.path.isfile(filename):
             prob, ratio = probability_and_proportion(filename,knwb)
+            caps = capitalLetterFeature(filename)
+            white = whiteSpaceFeature(filename)
+            #digs = digitFeature(filename)
+            #links = linkFeature(filename)
             if (ratio >= 0):
                 sF1.append(prob)
                 sF2.append(ratio)
+                sF3.append(caps)
+                sF4.append(white)
+                #sF5.append(links)
     labels = ["ham"]*len(hF1) +["spam"]*len(sF1)
     f1 = np.append(hF1,sF1)
     f2 = np.append(hF2,sF2)
-    X = np.zeros((len(f1),2))
+    f3 = np.append(hF3,sF3)
+    f4 = np.append(hF4,sF4)
+    #f5 = np.append(hF5,sF5)
+    X = np.zeros((len(f1),4))
     for i in range(len(f1)):
         X[i,0] = f1[i]
         X[i,1] = f2[i]
+        X[i,2] = f3[i]
+        X[i,3] = f4[i]
+        #X[i,3] = f5[i]
 
 
     svc = SVC(kernel=k)
@@ -928,8 +627,12 @@ def createSVC(train_ham, train_spam,knwb, k="rbf"):
 
 def svcPredict (svc, filename, knwb):
     prob, ratio = probability_and_proportion(filename,knwb)
+    caps = capitalLetterFeature(filename)
+    white = whiteSpaceFeature(filename)
+    #digs = digitFeature(filename)
+    #links = linkFeature(filename)
     if ratio >= 0:
-        return svc.predict(np.matrix([prob,ratio]))
+        return svc.predict(np.matrix([prob,ratio,caps,white]))
     elif prob > 1:
         return "spam"
     else:
@@ -965,31 +668,57 @@ def testSVC(its = 5):
 def createKNN(train_ham, train_spam, knwb, w ='uniform', n = 3):
     hF1 = []
     hF2 = []
+    hF3 = []
+    hF4 = []
+    #hF5 = []
     sF1 = []
     sF2 = []
+    sF3 = []
+    sF4 = []
+    #sF5 = []
 
     for i in train_ham:
         filename = "public/ham"+("%03d"%i)+".txt"
         if os.path.isfile(filename):
             prob, ratio = probability_and_proportion(filename,knwb)
+            caps = capitalLetterFeature(filename)
+            white = whiteSpaceFeature(filename)
+            #digs = digitFeature(filename)
+            #links = linkFeature(filename)
             hF1.append(prob)
             hF2.append(ratio)
+            hF3.append(caps)
+            hF4.append(white)
+            #hF5.append(links)
 
     for i in train_spam:
         filename = "public/spam"+("%03d"%i)+".txt"
         if os.path.isfile(filename):
             prob, ratio = probability_and_proportion(filename,knwb)
+            caps = capitalLetterFeature(filename)
+            white = whiteSpaceFeature(filename)
+            #digs = digitFeature(filename)
+            #links = linkFeature(filename)
+            syms = testsymtoletSingle(filename)
             sF1.append(prob)
             sF2.append(ratio)
+            sF3.append(caps)
+            sF4.append(white)
+            #sF5.append(links)
 
     labels = ["ham"]*len(hF1) +["spam"]*len(sF1)
     f1 = np.append(hF1,sF1)
     f2 = np.append(hF2,sF2)
-    X = np.zeros((len(f1),2))
+    f3 = np.append(hF3,sF3)
+    f4 = np.append(hF4,sF4)
+    #f5 = np.append(hF5,sF5)
+    X = np.zeros((len(f1),4))
     for i in range(len(f1)):
         X[i,0] = f1[i]
         X[i,1] = f2[i]
-
+        X[i,2] = f3[i]
+        X[i,3] = f4[i]
+        #X[i,3] = f5[i]
 
     knn  = KNeighborsClassifier(weights=w, n_neighbors=n)
     knn.fit(X,labels)
@@ -1056,7 +785,5 @@ def testTopTen(filename, knwb):
         return "ham"
     else:
         return "spam"
-
-
 
 main()
